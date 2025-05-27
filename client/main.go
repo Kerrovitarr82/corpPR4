@@ -90,6 +90,12 @@ func joinPlayer(name string) string {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		fmt.Println("Ответ сервера:", string(body))
+		return ""
+	}
+
 	var body struct {
 		PlayerID string `json:"player_id"`
 	}
