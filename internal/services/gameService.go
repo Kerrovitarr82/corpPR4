@@ -54,26 +54,20 @@ func (gs *GameService) monitorInactivity() {
 		currentPlayerID := gs.turnOrder[gs.currentTurn]
 		player, ok := gs.players[currentPlayerID]
 		if !ok {
-			// Если игрок уже удалён по какой-то причине — пропустить ход
 			gs.advanceTurn()
 			gs.mu.Unlock()
 			continue
 		}
 
 		if time.Since(player.LastActive) > gs.inactivityTimeout {
-			fmt.Printf("Игрок %s пропустил ход из-за бездействия\n", gs.players[currentPlayerID].Name)
-
-			// Удалить игрока из всех структур
+			fmt.Printf("Player %s AFK, kick him.\n", gs.players[currentPlayerID].Name)
 			delete(gs.players, currentPlayerID)
 			delete(gs.readyPlayers, currentPlayerID)
 			delete(gs.attempts, currentPlayerID)
-
-			// Удаление из очереди
 			gs.turnOrder = append(gs.turnOrder[:gs.currentTurn], gs.turnOrder[gs.currentTurn+1:]...)
 
-			// Проверка на завершение игры
 			if len(gs.turnOrder) < 2 {
-				fmt.Println("Осталось менее 2 активных игроков — раунд прерван")
+				fmt.Println("Too few players. You need at least 2 players to play.")
 				gs.roundActive = false
 				gs.readyPlayers = make(map[string]bool)
 				gs.turnOrder = nil
@@ -82,12 +76,10 @@ func (gs *GameService) monitorInactivity() {
 				continue
 			}
 
-			// Корректировка currentTurn, если он вышел за границу
 			if gs.currentTurn >= len(gs.turnOrder) {
 				gs.currentTurn = 0
 			}
 		} else {
-			// Игрок активен — ничего не делаем
 		}
 
 		gs.mu.Unlock()
@@ -222,7 +214,6 @@ func (gs *GameService) ProcessGuess(playerID, guess string) (int, int, string, e
 		message = fmt.Sprintf("Player %s guessed the code!", gs.players[playerID].Name)
 	}
 
-	// следующий ход
 	if gs.roundActive {
 		gs.advanceTurn()
 	}
